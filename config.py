@@ -18,6 +18,14 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str | None = None
     GEMINI_VISION_MODEL: str = "gemini-2.0-flash-lite"
 
+    # Прокси для Bot API (нужен на хостинге в РФ, если api.telegram.org недоступен).
+    # Пример: socks5://127.0.0.1:9050 или http://relay.example.com:8080
+    TELEGRAM_PROXY: str | None = None
+
+    # Прокси для Gemini/OpenAI (httpx). Для Gemini нужен выход в поддерживаемом регионе (EU/US).
+    # Можно указать тот же адрес, что и TELEGRAM_PROXY, если прокси универсальный.
+    HTTP_PROXY: str | None = None
+
     @property
     def db_url(self) -> str:
         return (

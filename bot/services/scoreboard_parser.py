@@ -12,6 +12,14 @@ from bot.services.scoring import PlayerMatchStats
 from config import settings
 from db.models import Registration
 
+
+def _vision_http_client_kwargs() -> dict:
+    kwargs: dict = {"timeout": 60.0}
+    if settings.HTTP_PROXY:
+        kwargs["proxy"] = settings.HTTP_PROXY
+    return kwargs
+
+
 KDA_PATTERN = re.compile(
     r"(?P<k>\d+)\s*[/\\|lI1]\s*(?P<d>\d+)\s*[/\\|lI1]\s*(?P<a>\d+)",
     re.IGNORECASE,
@@ -688,7 +696,7 @@ async def _parse_with_openai_vision(image_bytes: bytes) -> list[ParsedScoreboard
         "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
         "Content-Type": "application/json",
     }
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(**_vision_http_client_kwargs()) as client:
         response = await client.post(
             "https://api.openai.com/v1/chat/completions",
             headers=headers,
@@ -814,7 +822,7 @@ async def _call_gemini_vision(image_bytes: bytes, model: str) -> list[ParsedScor
             "responseMimeType": "application/json",
         },
     }
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(**_vision_http_client_kwargs()) as client:
         response = await client.post(
             url,
             headers={

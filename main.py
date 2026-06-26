@@ -1,6 +1,8 @@
 # main.py
 import asyncio
 from aiogram import Bot, Dispatcher
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.exceptions import TelegramNetworkError
 from aiogram.fsm.storage.memory import MemoryStorage
 from loguru import logger
 
@@ -18,10 +20,19 @@ from bot.handlers.stages import stages_router
 from bot.handlers.finalists import finalists_router
 from scheduler.subscription_checker import subscription_checker_loop
 
+
+def create_bot() -> Bot:
+    if settings.TELEGRAM_PROXY:
+        session = AiohttpSession(proxy=settings.TELEGRAM_PROXY)
+        logger.info("Telegram Bot API: используется прокси")
+        return Bot(token=settings.BOT_TOKEN, session=session)
+    return Bot(token=settings.BOT_TOKEN)
+
+
 async def main():
     # Явно инициализируем MemoryStorage для FSM
     storage = MemoryStorage()
-    bot = Bot(token=settings.BOT_TOKEN)
+    bot = create_bot()
     dp = Dispatcher(storage=storage)
 
     logger.info("Настройка базы данных...")
@@ -37,7 +48,10 @@ async def main():
     
     try:
         logger.info("Установка команд меню...")
-        await set_bot_commands(bot)
+        try:
+            await set_bot_commands(bot)
+        except TelegramNetworkError as exc:
+            logger.warning(f"Не удалось установить команды меню (бот продолжит работу): {exc}")
         
         # Подключаем роутеры
         dp.include_routers(
